@@ -1,0 +1,60 @@
+# Ignore node dependencies
+node_modules/
+
+# Ignore build outputs
+dist/
+build/
+.out/
+.next/
+.cache/
+.tmp/
+coverage/
+
+# Ignore logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Ignore environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Ignore IDE directories
+.vscode/
+.idea/
+
+# Ignore test snapshots
+__snapshots__/
+
+# Ignore local type checking
+tsbuildinfo
+
+# Ignore optional lock files
+yarn.lock
+pnpm-lock.yaml
+
+# Ignore log output
+logs/
+*.log
+
+# Ignore analytics, coverage, etc
+*.tgz
+
+# Misc
+*.sublime-workspace
+*.sublime-project
+*.swp
+*.swo
+
+# Ignore temp/backup files
+*~
+*.bak
+*.tmp
