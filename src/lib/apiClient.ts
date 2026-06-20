@@ -60,6 +60,7 @@ async function handleRefresh(): Promise<string> {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      'ngrok-skip-browser-warning': 'true',
     },
     body: JSON.stringify({ refresh }),
   });
@@ -83,6 +84,7 @@ export async function apiRequest<T = any>(
 ): Promise<T> {
   const { access } = getTokens();
   const headers = new Headers(options.headers || {});
+  headers.set('ngrok-skip-browser-warning', 'true');
 
   if (access && !headers.has('Authorization')) {
     headers.set('Authorization', `Bearer ${access}`);
