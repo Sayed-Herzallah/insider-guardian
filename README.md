@@ -1,117 +1,121 @@
-# Insider Guardian — Enterprise EDR Dashboard
+# 🛡️ Insider Guardian - Enterprise EDR Security Dashboard
 
-[![React](https://img.shields.io/badge/React-19.0-blue.svg?logo=react)](https://react.dev/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue.svg?logo=typescript)](https://www.typescriptlang.org/)
-[![Vite](https://img.shields.io/badge/Vite-7.0-purple.svg?logo=vite)](https://vite.dev/)
-[![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3.4-blue.svg?logo=tailwindcss)](https://tailwindcss.com/)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
+<div align="center">
+  <img src="https://capsule-render.vercel.app/api?type=waving&color=0:0d1117,100:c62828&height=180&section=header&text=Insider%20Guardian%20EDR&fontSize=40&fontColor=ffffff&fontFamily=Outfit" width="100%" />
+</div>
 
-Insider Guardian is a next-generation, enterprise-grade Endpoint Detection and Response (EDR) frontend dashboard. Engineered for Security Operations Centers (SOC), it enables security analysts to monitor real-time endpoint telemetry, investigate complex threat incidents, and orchestrate automated response playbooks through a high-fidelity, interactive interface.
+Insider Guardian is a next-generation, enterprise-grade Endpoint Detection and Response (EDR) frontend dashboard. Engineered for Security Operations Centers (SOC), it enables security analysts to monitor real-time endpoint telemetry, investigate complex threat incidents, and orchestrate automated response playbooks through a high-fidelity, hardware-accelerated interactive interface.
 
 ---
 
-## 📸 Architecture & Data Flow
+## 🚀 Key Features
+
+* **🔌 Real-Time Telemetry Stream**: Live WebSocket client ingestion for instant threat event popups, incident alerts, and real-time host status synchronization.
+* **📊 Visual Threat Analytics**: High-performance declarative charting utilizing `Recharts` to visualize severity distribution, incident velocity, and host health graphs.
+* **✨ Premium Micro-interactions**: Smooth page layouts, responsive grids, and high-performance physics-based transition animations powered by `GSAP` (GreenSock).
+* **🔒 Enterprise Resilience**: Automatic JWT session renewal using interceptor queues on HTTP `401 Unauthorized` responses, combined with type-safe schema verification using `Zod`.
+* **⚙️ Interactive Operations**: Complete host isolation triggers, threat state lifecycle management (New, In-Progress, Contained, Resolved), and analyst note assignment.
+
+---
+
+## 🧬 Architecture & Logic Flow
+
+Below is the client-side system architecture and telemetry flow inside Insider Guardian:
 
 ```mermaid
 graph TD
-    User([Security Analyst]) <--> UI[React Components / Pages]
-    UI <--> Context[DataContext / State Management]
-    Context <--> WSClient[WebSocket Client]
-    Context <--> APIClient[HTTP API Client]
-    WSClient <-->|Live Events| BackendWS[Backend WebSocket Server]
-    APIClient <-->|REST APIs| BackendREST[Backend REST API Server]
+    User([Security Analyst]) <--> UI[React Components & Pages]
+    UI <--> Context[Data Context / State Manager]
+    Context <--> WSClient[WebSocket Client Wrapper]
+    Context <--> APIClient[Axios REST API Client]
+    
+    WSClient <-->|Live Telemetry Stream| BackendWS[Backend WebSocket Server]
+    APIClient <-->|Auth & CRUD APIs| BackendREST[Backend REST API Server]
 ```
 
 ---
 
-## ⚡ Key Modules & Features
+## 🛠️ Technology Stack & Badges
 
-### 🛡️ Real-Time Security Operations
-* **WebSocket Integration:** Live telemetry ingestion for instant threat alerts and endpoint state transitions.
-* **Incident Management:** Full lifecycle tracking (New, Investigating, Contained, Resolved) with analyst note assignment.
-* **Host Isolation:** Immediate threat mitigation capabilities to isolate compromised endpoints.
+### Core Frontend Stack
+[![React](https://img.shields.io/badge/React-v19.0-blue?logo=react&style=flat-square)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-v5.x-blue?logo=typescript&style=flat-square)](https://www.typescriptlang.org/)
+[![Vite](https://img.shields.io/badge/Vite-v7.0-purple?logo=vite&style=flat-square)](https://vite.dev/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-v3.4-blue?logo=tailwindcss&style=flat-square)](https://tailwindcss.com/)
 
-### 📊 Data Visualization & UX
-* **Threat Metrics:** Dynamic charts utilizing **Recharts** to display threat severity distribution and endpoint health stats.
-* **Premium Micro-interactions:** Fluid layouts and page transitions using **GSAP** (GreenSock) for a premium, hardware-accelerated user experience.
-* **Responsive Dark-Mode:** High-contrast Tailwind CSS interface tailored for dark operations rooms.
-
-### 🔒 Enterprise Robustness
-* **Token Lifecycle Management:** Automatic JWT token refresh utilizing axios-like interceptors on HTTP `401 Unauthorized` responses.
-* **Client-Side Validation:** Advanced schema validation for user authentication powered by **Zod**.
-* **Strict Typing:** Written completely in strict TypeScript for runtime stability and self-documenting code.
+### UI & Animations
+[![GSAP](https://img.shields.io/badge/GSAP-Animations-green?style=flat-square)](https://greensock.com/gsap/)
+[![Recharts](https://img.shields.io/badge/Recharts-Data_Vis-orange?style=flat-square)](https://recharts.org/)
+[![Radix UI](https://img.shields.io/badge/Radix_UI-Primitives-darkblue?style=flat-square)](https://www.radix-ui.com/)
+[![Zod Validation](https://img.shields.io/badge/Zod-Schema_Validation-violet?style=flat-square)](https://zod.dev/)
 
 ---
 
-## 🛠️ Tech Stack & Dependencies
+## 📂 Folder Structure
 
-| Technology | Category | Description |
-| :--- | :--- | :--- |
-| **React 19** | Core | Modern UI components with concurrent rendering support. |
-| **TypeScript** | Language | Strict type definitions for application scalability. |
-| **Vite** | Build Tool | Lightning-fast Hot Module Replacement (HMR) and bundling. |
-| **Tailwind CSS** | Styling | Utility-first CSS framework for clean, responsive designs. |
-| **GSAP** | Animation | Advanced physics-based micro-animations and layouts. |
-| **Recharts** | Data Vis | Declarative charting library built on React components. |
-| **Zod** | Validation | Type-safe schema validation for form submissions. |
+```text
+insider-guardian/
+├── index.html         # HTML SPA bootstrap
+├── vite.config.ts     # Bundling & path configurations
+├── tailwind.config.js # Custom design tokens & colors
+├── src/
+│   ├── main.tsx       # Entry mount point
+│   ├── App.tsx        # Base layout & router coordinator
+│   ├── App.css        # Global layout classes
+│   ├── index.css      # Core Tailwind directives & style tokens
+│   ├── components/    # Reusable atomic UI components (charts, modals, table-rows)
+│   ├── config/        # API endpoints & environment constants
+│   ├── context/       # Auth context and telemetry socket state
+│   ├── hooks/         # Custom React hooks (telemetry, query, debounce)
+│   ├── lib/           # Clients wrappers (REST interceptors & socket emitters)
+│   ├── pages/         # Full layouts (Overview Dashboard, Alert Logs, Settings)
+│   └── types/         # Strict TypeScript interface schemas
+```
 
 ---
 
 ## 🚀 Getting Started
 
 ### Prerequisites
-* Node.js (v18.0.0 or higher)
-* npm (v9.0.0 or higher)
+- Node.js (v18.0.0 or higher)
+- npm (v9.0.0 or higher)
 
-### Installation
-
-1. **Clone the repository:**
+### Setup & Launch
+1. Clone the repository:
    ```bash
    git clone https://github.com/Sayed-Herzallah/insider-guardian.git
    cd insider-guardian
    ```
-
-2. **Install project dependencies:**
+2. Install dependencies:
    ```bash
    npm install
    ```
-
-3. **Configure API Endpoints:**
-   Edit the server endpoints in `src/config/api.ts` to point to your live backend server:
+3. Set up backend server endpoints in `src/config/api.ts`:
    ```typescript
    export const REST_BASE_URL = 'http://192.168.100.9:8000/api/v1';
    export const WS_BASE_URL = 'ws://192.168.100.9:8000/ws/dashboard/';
    ```
-
-4. **Start the local development server:**
+4. Run locally:
    ```bash
    npm run dev
    ```
-
-5. **Build optimized production bundle:**
+5. Build production bundle:
    ```bash
    npm run build
    ```
 
 ---
 
-## 📁 Directory Structure
+## 📜 Verified Certificates & Achievements
+To review verified technical accomplishments, backend training, and professional project portfolios, click below:
 
-```text
-├── src/
-│   ├── components/     # Reusable UI widgets and layout modules
-│   ├── config/         # System configuration & environment endpoints
-│   ├── context/        # React Context providers (Authentication, WebSockets)
-│   ├── hooks/          # Custom utility React hooks
-│   ├── lib/            # REST and WebSocket API client wrappers
-│   ├── pages/          # Complete page views (Overview, Alerts, Profile, etc.)
-│   ├── types/          # Global TypeScript interfaces
-│   ├── App.tsx         # Root layout and view coordinator
-│   └── main.tsx        # Application mount point
-```
+[![Portfolio Achievements](https://img.shields.io/badge/Verified_Certifications-Click_to_View-gold?style=for-the-badge&logo=credentials)](https://herzallah.me#certifications)
 
 ---
 
-## 📄 License
-
-This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
+## 👨‍💻 Developed By
+**Sayed Herzallah**  
+*Backend-Focused Full-Stack Developer*  
+- [LinkedIn Profile](https://www.linkedin.com/in/sayed-herzallah)  
+- [Portfolio Website](https://herzallah.me)  
+- [GitHub Profile](https://github.com/Sayed-Herzallah)  
