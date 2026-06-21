@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { apiRequest } from '@/lib/apiClient';
+import { useData } from '@/context/DataContext';
 import {
   Filter,
   Search,
@@ -93,20 +94,36 @@ const fetchAlerts = async (
     const response = await apiRequest(`/alerts/?${params.toString()}`);
     
     // Map backend Alert model to frontend Alert model
-    const mappedAlerts: Alert[] = (response?.data || []).map((a: any) => ({
-      id: a.id,
-      severity: a.severity || 'low',
-      timestamp: a.detected_at || a.created_at || new Date().toISOString(),
-      host: a.agent_hostname || a.agent_name || 'Unknown',
-      threatName: a.title || a.alert_type || 'Threat Detected',
-      status: a.status === 'under_review' ? 'investigating' : a.status === 'resolved' ? 'resolved' : a.status === 'false_positive' ? 'resolved' : 'new',
-      user: a.user_account || 'system',
-      description: a.description || '',
-      mitreTactic: a.mitre_tactic_names ? a.mitre_tactic_names[0] : undefined,
-      mitreTechnique: a.mitre_technique_id ? `${a.mitre_technique_id} - ${a.mitre_technique_name}` : undefined,
-      iocs: a.file_hash ? [{ type: 'hash', value: a.file_hash }] : [],
-      evidence: a.process_name ? [a.process_name, a.process_path].filter(Boolean) : [],
-    }));
+    let alertsList: any[] = [];
+    if (Array.isArray(response)) {
+      alertsList = response;
+    } else if (response && Array.isArray(response.data)) {
+      alertsList = response.data;
+    } else if (response && Array.isArray(response.results)) {
+      alertsList = response.results;
+    }
+
+    const mappedAlerts: Alert[] = alertsList.map((a: any) => {
+      if (!a) return null;
+      return {
+        id: a.id || `ALT-${Math.floor(Math.random() * 10000)}`,
+        severity: a.severity || 'low',
+        timestamp: a.detected_at || a.created_at || new Date().toISOString(),
+        host: a.agent_hostname || a.agent_name || 'Unknown',
+        threatName: a.title || a.alert_type || 'Threat Detected',
+        status: a.status === 'under_review' ? 'investigating' : a.status === 'resolved' ? 'resolved' : a.status === 'false_positive' ? 'resolved' : 'new',
+        user: a.user_account || 'system',
+        description: a.description || '',
+        mitreTactic: Array.isArray(a.mitre_tactic_names) ? a.mitre_tactic_names[0] : (typeof a.mitre_tactic_names === 'string' ? a.mitre_tactic_names : undefined),
+        mitreTechnique: a.mitre_technique_id ? `${a.mitre_technique_id} - ${a.mitre_technique_name || ''}` : undefined,
+        iocs: a.file_hash ? [{ type: 'hash', value: a.file_hash }] : [],
+        evidence: a.process_name ? [a.process_name, a.process_path].filter(Boolean) : [],
+      };
+    }).filter(Boolean) as Alert[];
+
+    if (mappedAlerts.length === 0) {
+      throw new Error('No alerts found from API');
+    }
 
     return {
       data: mappedAlerts,
@@ -116,11 +133,19 @@ const fetchAlerts = async (
     };
   } catch (error) {
     console.warn('Alerts API call failed, falling back to mock alerts:', error);
-    let filtered = MOCK_ALERTS.filter(a => 
-      (search === '' || a.threatName.toLowerCase().includes(search.toLowerCase()) || a.host.toLowerCase().includes(search.toLowerCase())) &&
-      (severity === 'all' || a.severity === severity) &&
-      (status === 'all' || a.status === status)
-    );
+    const searchStr = (search || '').toLowerCase();
+    const severityStr = (severity || 'all').toLowerCase();
+    const statusStr = (status || 'all').toLowerCase();
+    
+    let filtered = MOCK_ALERTS.filter(a => {
+      const matchesSearch = searchStr === '' || 
+        (a.threatName && a.threatName.toLowerCase().includes(searchStr)) || 
+        (a.host && a.host.toLowerCase().includes(searchStr));
+      const matchesSeverity = severityStr === 'all' || (a.severity && a.severity.toLowerCase() === severityStr);
+      const matchesStatus = statusStr === 'all' || (a.status && a.status.toLowerCase() === statusStr);
+      return matchesSearch && matchesSeverity && matchesStatus;
+    });
+    
     const start = (page - 1) * limit;
     return {
       data: filtered.slice(start, start + limit),
@@ -151,6 +176,7 @@ const updateAlert = async (id: string, updates: Partial<Alert>): Promise<boolean
 // --- Components ---
 
 export default function Alerts() {
+  const { user } = useData();
   // State
   const [data, setData] = useState<Alert[]>([]);
   const [loading, setLoading] = useState(true);
@@ -487,15 +513,23 @@ export default function Alerts() {
 
               {/* Action Footer (Sticky) */}
               <div className="pt-6 mt-6 border-t border-white/5 flex gap-3">
-                 <button 
-                    onClick={() => handleUpdateStatus('investigating')}
-                    className="flex-1 bg-[#00d4c3] text-black font-bold text-sm py-3 rounded-lg hover:bg-[#00d4c3]/90 transition-all active:scale-[0.98]"
-                 >
-                    Acknowledge & Investigate
-                 </button>
-                 <button className="px-4 py-3 bg-[#111318] border border-white/10 rounded-lg text-white hover:bg-white/5 transition-colors">
-                    <MoreVertical size={20} />
-                 </button>
+                 {user?.role === 'user' ? (
+                   <div className="flex-1 text-center py-3 px-4 rounded-xl bg-[#ff3b30]/10 border border-[#ff3b30]/20 text-xs text-[#ff3b30] font-medium">
+                     Read-only Access: You do not have permissions to modify alert status.
+                   </div>
+                 ) : (
+                   <>
+                     <button 
+                        onClick={() => handleUpdateStatus('investigating')}
+                        className="flex-1 bg-[#00d4c3] text-black font-bold text-sm py-3 rounded-lg hover:bg-[#00d4c3]/90 transition-all active:scale-[0.98]"
+                     >
+                        Acknowledge & Investigate
+                     </button>
+                     <button className="px-4 py-3 bg-[#111318] border border-white/10 rounded-lg text-white hover:bg-white/5 transition-colors">
+                        <MoreVertical size={20} />
+                     </button>
+                   </>
+                 )}
               </div>
 
             </div>

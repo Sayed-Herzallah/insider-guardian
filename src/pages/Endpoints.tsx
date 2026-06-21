@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { apiRequest } from '@/lib/apiClient';
+import { useData } from '@/context/DataContext';
 import {
   Search,
   Monitor,
@@ -161,6 +162,7 @@ function RiskGauge({ score }: { score: number }) {
 }
 
 export default function Endpoints() {
+  const { user } = useData();
   const [data, setData] = useState<Endpoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
@@ -650,12 +652,16 @@ export default function Endpoints() {
             Back to Endpoints
           </button>
           <div className="flex gap-2">
-            <button className="px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-xs font-medium hover:bg-white/10 transition-colors">
-              Isolate Device
-            </button>
-            <button className="px-3 py-1.5 bg-[#ff3b30]/10 border border-[#ff3b30]/20 text-[#ff3b30] rounded-lg text-xs font-medium hover:bg-[#ff3b30]/20 transition-colors">
-              Terminate Process
-            </button>
+            {user?.role !== 'user' && (
+              <>
+                <button className="px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-xs font-medium hover:bg-white/10 transition-colors">
+                  Isolate Device
+                </button>
+                <button className="px-3 py-1.5 bg-[#ff3b30]/10 border border-[#ff3b30]/20 text-[#ff3b30] rounded-lg text-xs font-medium hover:bg-[#ff3b30]/20 transition-colors">
+                  Terminate Process
+                </button>
+              </>
+            )}
           </div>
         </div>
 
@@ -810,199 +816,210 @@ export default function Endpoints() {
         )}
 
         {activeTab === 'console' && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Command control panel */}
-            <div className="lg:col-span-1 bg-[#0b0c0f] border border-white/5 rounded-xl p-6 flex flex-col space-y-6">
-              <div>
-                <h3 className="text-sm font-semibold text-white mb-1">Response Action</h3>
-                <p className="text-xs text-[#a6acb8]">Select a command template to execute on the endpoint agent.</p>
+          user?.role === 'user' ? (
+            <div className="bg-[#0b0c0f] border border-white/5 rounded-xl p-10 flex flex-col items-center justify-center text-center py-20">
+              <div className="w-16 h-16 rounded-full bg-[#ff3b30]/10 border border-[#ff3b30]/20 flex items-center justify-center text-[#ff3b30] mb-4 animate-pulse">
+                <Terminal size={28} />
               </div>
-
-              <div className="space-y-4 flex-1 overflow-y-auto max-h-[350px] pr-1">
-                <div>
-                  <label className="text-xs text-[#a6acb8] font-medium block mb-2">Command Type</label>
-                  <select
-                    value={selectedCommand}
-                    onChange={(e) => {
-                      setSelectedCommand(e.target.value);
-                      setCommandParams({});
-                    }}
-                    className="w-full bg-[#111318] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:border-[#00d4c3]/50 outline-none font-sans"
-                  >
-                    <option value="kill_process">Kill Process</option>
-                    <option value="delete_file">Delete File</option>
-                    <option value="quarantine_file">Quarantine File</option>
-                    <option value="block_ip">Block IP Address</option>
-                    <option value="unblock_ip">Unblock IP Address</option>
-                    <option value="block_domain">Block Domain</option>
-                    <option value="kill_connections_by_ip">Kill Connections by IP</option>
-                    <option value="isolate_host">Isolate Host</option>
-                    <option value="unisolate_host">Unisolate Host</option>
-                    <option value="reboot_machine">Reboot Machine</option>
-                    <option value="logoff_user">Logoff User Session</option>
-                  </select>
-                </div>
-
-                {/* Dynamic fields */}
-                {selectedCommand === 'kill_process' && (
-                  <div>
-                    <label className="text-xs text-[#a6acb8] font-medium block mb-1">Process ID (PID)</label>
-                    <input
-                      type="number"
-                      placeholder="e.g. 4772"
-                      value={commandParams.pid || ''}
-                      onChange={(e) => setCommandParams({ ...commandParams, pid: e.target.value })}
-                      className="w-full bg-[#111318] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-[#52525b] focus:outline-none focus:border-[#00d4c3]/50 transition-colors"
-                      required
-                    />
-                  </div>
-                )}
-
-                {(selectedCommand === 'delete_file' || selectedCommand === 'quarantine_file') && (
-                  <div>
-                    <label className="text-xs text-[#a6acb8] font-medium block mb-1">Absolute File Path</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. C:\Users\Public\malicious.exe"
-                      value={commandParams.path || ''}
-                      onChange={(e) => setCommandParams({ ...commandParams, path: e.target.value })}
-                      className="w-full bg-[#111318] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-[#52525b] focus:outline-none focus:border-[#00d4c3]/50 transition-colors"
-                      required
-                    />
-                  </div>
-                )}
-
-                {(selectedCommand === 'block_ip' || selectedCommand === 'unblock_ip' || selectedCommand === 'kill_connections_by_ip') && (
-                  <div>
-                    <label className="text-xs text-[#a6acb8] font-medium block mb-1">IP Address</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. 185.220.101.4"
-                      value={commandParams.ip || ''}
-                      onChange={(e) => setCommandParams({ ...commandParams, ip: e.target.value })}
-                      className="w-full bg-[#111318] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-[#52525b] focus:outline-none focus:border-[#00d4c3]/50 transition-colors"
-                      required
-                    />
-                  </div>
-                )}
-
-                {selectedCommand === 'block_domain' && (
-                  <div>
-                    <label className="text-xs text-[#a6acb8] font-medium block mb-1">Domain Name</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. malicious-c2.com"
-                      value={commandParams.domain || ''}
-                      onChange={(e) => setCommandParams({ ...commandParams, domain: e.target.value })}
-                      className="w-full bg-[#111318] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-[#52525b] focus:outline-none focus:border-[#00d4c3]/50 transition-colors"
-                      required
-                    />
-                  </div>
-                )}
-
-                {selectedCommand === 'reboot_machine' && (
-                  <div>
-                    <label className="text-xs text-[#a6acb8] font-medium block mb-1">Delay (Seconds)</label>
-                    <input
-                      type="number"
-                      placeholder="e.g. 10 (optional)"
-                      value={commandParams.delay_seconds || ''}
-                      onChange={(e) => setCommandParams({ ...commandParams, delay_seconds: e.target.value })}
-                      className="w-full bg-[#111318] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-[#52525b] focus:outline-none focus:border-[#00d4c3]/50 transition-colors"
-                    />
-                  </div>
-                )}
-
-                {selectedCommand === 'logoff_user' && (
-                  <div>
-                    <label className="text-xs text-[#a6acb8] font-medium block mb-1">Session ID</label>
-                    <input
-                      type="number"
-                      placeholder="e.g. 1 (optional)"
-                      value={commandParams.session_id || ''}
-                      onChange={(e) => setCommandParams({ ...commandParams, session_id: e.target.value })}
-                      className="w-full bg-[#111318] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-[#52525b] focus:outline-none focus:border-[#00d4c3]/50 transition-colors"
-                    />
-                  </div>
-                )}
-
-                <div>
-                  <label className="text-xs text-[#a6acb8] font-medium block mb-1">Reason for Dispatch</label>
-                  <textarea
-                    rows={2}
-                    placeholder="Provide incident/alert context..."
-                    value={commandReason}
-                    onChange={(e) => setCommandReason(e.target.value)}
-                    className="w-full bg-[#111318] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-[#52525b] focus:outline-none focus:border-[#00d4c3]/50 transition-colors resize-none font-sans"
-                    required
-                  />
-                </div>
-              </div>
-
-              <button
-                onClick={handleDispatchCommand}
-                disabled={isCommandLoading || !!activeCommandId}
-                className="w-full py-2 bg-[#ff3b30] hover:bg-[#ff3b30]/90 text-white font-semibold rounded-lg text-sm transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_15px_-3px_#ff3b3050] font-sans mt-auto"
-              >
-                <Terminal size={16} />
-                {isCommandLoading ? 'Registering...' : 'Dispatch EDR Command'}
-              </button>
+              <h3 className="text-base font-bold text-white mb-2">Live Console Restricted</h3>
+              <p className="text-xs text-[#a6acb8] max-w-sm leading-relaxed">
+                Running remote terminal commands and response actions is restricted to SOC Analysts and Administrators.
+              </p>
             </div>
-
-            {/* Terminal display panel */}
-            <div className="lg:col-span-2 bg-[#040507] border border-white/10 rounded-xl p-4 flex flex-col h-[480px] font-mono shadow-2xl">
-              <div className="flex items-center justify-between border-b border-white/10 pb-3 mb-3">
-                <div className="flex items-center gap-2">
-                  <div className="flex gap-1.5">
-                    <span className="w-3 h-3 rounded-full bg-[#ff5f56]" />
-                    <span className="w-3 h-3 rounded-full bg-[#ffbd2e]" />
-                    <span className="w-3 h-3 rounded-full bg-[#27c93f]" />
-                  </div>
-                  <span className="text-xs text-[#a6acb8] ml-2">EDR Terminal - {selectedEndpoint.hostname}</span>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Command control panel */}
+              <div className="lg:col-span-1 bg-[#0b0c0f] border border-white/5 rounded-xl p-6 flex flex-col space-y-6">
+                <div>
+                  <h3 className="text-sm font-semibold text-white mb-1">Response Action</h3>
+                  <p className="text-xs text-[#a6acb8]">Select a command template to execute on the endpoint agent.</p>
                 </div>
-                <div className="flex items-center gap-2">
-                  {activeCommandId && (
-                    <button
-                      onClick={handleCancelCommand}
-                      className="px-2 py-1 bg-[#ff3b30]/10 hover:bg-[#ff3b30]/20 text-[#ff3b30] border border-[#ff3b30]/20 rounded text-[10px] font-semibold flex items-center gap-1 transition-colors font-sans"
+
+                <div className="space-y-4 flex-1 overflow-y-auto max-h-[350px] pr-1">
+                  <div>
+                    <label className="text-xs text-[#a6acb8] font-medium block mb-2">Command Type</label>
+                    <select
+                      value={selectedCommand}
+                      onChange={(e) => {
+                        setSelectedCommand(e.target.value);
+                        setCommandParams({});
+                      }}
+                      className="w-full bg-[#111318] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:border-[#00d4c3]/50 outline-none font-sans"
                     >
-                      <XCircle size={10} />
-                      Cancel Execution
-                    </button>
+                      <option value="kill_process">Kill Process</option>
+                      <option value="delete_file">Delete File</option>
+                      <option value="quarantine_file">Quarantine File</option>
+                      <option value="block_ip">Block IP Address</option>
+                      <option value="unblock_ip">Unblock IP Address</option>
+                      <option value="block_domain">Block Domain</option>
+                      <option value="kill_connections_by_ip">Kill Connections by IP</option>
+                      <option value="isolate_host">Isolate Host</option>
+                      <option value="unisolate_host">Unisolate Host</option>
+                      <option value="reboot_machine">Reboot Machine</option>
+                      <option value="logoff_user">Logoff User</option>
+                    </select>
+                  </div>
+
+                  {selectedCommand === 'kill_process' && (
+                    <div>
+                      <label className="text-xs text-[#a6acb8] font-medium block mb-1">Process PID</label>
+                      <input
+                        type="number"
+                        placeholder="e.g. 4772"
+                        value={commandParams.pid || ''}
+                        onChange={(e) => setCommandParams({ ...commandParams, pid: e.target.value })}
+                        className="w-full bg-[#111318] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-[#52525b] focus:outline-none focus:border-[#00d4c3]/50 transition-colors"
+                        required
+                      />
+                    </div>
                   )}
-                  <button
-                    onClick={() => setTerminalLines(['System shell initiated. Ready for instructions.'])}
-                    className="px-2 py-1 hover:bg-white/5 text-[#a6acb8] hover:text-white rounded text-[10px] transition-colors font-sans"
-                  >
-                    Clear Terminal
-                  </button>
+
+                  {(selectedCommand === 'delete_file' || selectedCommand === 'quarantine_file') && (
+                    <div>
+                      <label className="text-xs text-[#a6acb8] font-medium block mb-1">File Absolute Path</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. C:\Users\Public\malicious.exe"
+                        value={commandParams.path || ''}
+                        onChange={(e) => setCommandParams({ ...commandParams, path: e.target.value })}
+                        className="w-full bg-[#111318] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-[#52525b] focus:outline-none focus:border-[#00d4c3]/50 transition-colors"
+                        required
+                      />
+                    </div>
+                  )}
+
+                  {(selectedCommand === 'block_ip' || selectedCommand === 'unblock_ip' || selectedCommand === 'kill_connections_by_ip') && (
+                    <div>
+                      <label className="text-xs text-[#a6acb8] font-medium block mb-1">IP Address</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. 185.220.101.4"
+                        value={commandParams.ip || ''}
+                        onChange={(e) => setCommandParams({ ...commandParams, ip: e.target.value })}
+                        className="w-full bg-[#111318] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-[#52525b] focus:outline-none focus:border-[#00d4c3]/50 transition-colors"
+                        required
+                      />
+                    </div>
+                  )}
+
+                  {selectedCommand === 'block_domain' && (
+                    <div>
+                      <label className="text-xs text-[#a6acb8] font-medium block mb-1">Domain Name</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. malicious-c2.com"
+                        value={commandParams.domain || ''}
+                        onChange={(e) => setCommandParams({ ...commandParams, domain: e.target.value })}
+                        className="w-full bg-[#111318] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-[#52525b] focus:outline-none focus:border-[#00d4c3]/50 transition-colors"
+                        required
+                      />
+                    </div>
+                  )}
+
+                  {selectedCommand === 'reboot_machine' && (
+                    <div>
+                      <label className="text-xs text-[#a6acb8] font-medium block mb-1">Delay (Seconds)</label>
+                      <input
+                        type="number"
+                        placeholder="e.g. 10 (optional)"
+                        value={commandParams.delay_seconds || ''}
+                        onChange={(e) => setCommandParams({ ...commandParams, delay_seconds: e.target.value })}
+                        className="w-full bg-[#111318] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-[#52525b] focus:outline-none focus:border-[#00d4c3]/50 transition-colors"
+                      />
+                    </div>
+                  )}
+
+                  {selectedCommand === 'logoff_user' && (
+                    <div>
+                      <label className="text-xs text-[#a6acb8] font-medium block mb-1">Session ID</label>
+                      <input
+                        type="number"
+                        placeholder="e.g. 1 (optional)"
+                        value={commandParams.session_id || ''}
+                        onChange={(e) => setCommandParams({ ...commandParams, session_id: e.target.value })}
+                        className="w-full bg-[#111318] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-[#52525b] focus:outline-none focus:border-[#00d4c3]/50 transition-colors"
+                      />
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="text-xs text-[#a6acb8] font-medium block mb-1">Reason for Dispatch</label>
+                    <textarea
+                      rows={2}
+                      placeholder="Provide incident/alert context..."
+                      value={commandReason}
+                      onChange={(e) => setCommandReason(e.target.value)}
+                      className="w-full bg-[#111318] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-[#52525b] focus:outline-none focus:border-[#00d4c3]/50 transition-colors resize-none font-sans"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <button
+                  onClick={handleDispatchCommand}
+                  disabled={isCommandLoading || !!activeCommandId}
+                  className="w-full py-2 bg-[#ff3b30] hover:bg-[#ff3b30]/90 text-white font-semibold rounded-lg text-sm transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_15px_-3px_#ff3b3050] font-sans mt-auto"
+                >
+                  <Terminal size={16} />
+                  {isCommandLoading ? 'Registering...' : 'Dispatch EDR Command'}
+                </button>
+              </div>
+
+              {/* Terminal display panel */}
+              <div className="lg:col-span-2 bg-[#040507] border border-white/10 rounded-xl p-4 flex flex-col h-[480px] font-mono shadow-2xl">
+                <div className="flex items-center justify-between border-b border-white/10 pb-3 mb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="flex gap-1.5">
+                      <span className="w-3 h-3 rounded-full bg-[#ff5f56]" />
+                      <span className="w-3 h-3 rounded-full bg-[#ffbd2e]" />
+                      <span className="w-3 h-3 rounded-full bg-[#27c93f]" />
+                    </div>
+                    <span className="text-xs text-[#a6acb8] ml-2">EDR Terminal - {selectedEndpoint.hostname}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {activeCommandId && (
+                      <button
+                        onClick={handleCancelCommand}
+                        className="px-2 py-1 bg-[#ff3b30]/10 hover:bg-[#ff3b30]/20 text-[#ff3b30] border border-[#ff3b30]/20 rounded text-[10px] font-semibold flex items-center gap-1 transition-colors font-sans"
+                      >
+                        <XCircle size={10} />
+                        Cancel Execution
+                      </button>
+                    )}
+                    <button
+                      onClick={() => setTerminalLines(['System shell initiated. Ready for instructions.'])}
+                      className="px-2 py-1 hover:bg-white/5 text-[#a6acb8] hover:text-white rounded text-[10px] transition-colors font-sans"
+                    >
+                      Clear Terminal
+                    </button>
+                  </div>
+                </div>
+
+                {/* Terminal Logs */}
+                <div className="flex-1 overflow-y-auto space-y-1.5 p-2 select-text text-[11px] text-green-400">
+                  {terminalLines.map((line, idx) => (
+                    <div key={idx} className="whitespace-pre-wrap leading-relaxed">
+                      {line}
+                    </div>
+                  ))}
+                  
+                  {/* Active Polling Status */}
+                  {activeCommandId && (
+                    <div className="flex items-center gap-2 text-yellow-400 mt-2 animate-pulse font-sans">
+                      <RefreshCw size={12} className="animate-spin" />
+                      <span>Command execution pending (status: {commandStatus || 'dispatched'}). Polling output...</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="border-t border-white/10 pt-2 flex items-center text-[11px] text-[#52525b]">
+                  <span>EDR Controller v2.4.0</span>
+                  <span className="mx-2">•</span>
+                  <span>Agent Status: Online</span>
                 </div>
               </div>
-
-              {/* Terminal Logs */}
-              <div className="flex-1 overflow-y-auto space-y-1.5 p-2 select-text text-[11px] text-green-400">
-                {terminalLines.map((line, idx) => (
-                  <div key={idx} className="whitespace-pre-wrap leading-relaxed">
-                    {line}
-                  </div>
-                ))}
-                
-                {/* Active Polling Status */}
-                {activeCommandId && (
-                  <div className="flex items-center gap-2 text-yellow-400 mt-2 animate-pulse font-sans">
-                    <RefreshCw size={12} className="animate-spin" />
-                    <span>Command execution pending (status: {commandStatus || 'dispatched'}). Polling output...</span>
-                  </div>
-                )}
-              </div>
-
-              <div className="border-t border-white/10 pt-2 flex items-center text-[11px] text-[#52525b]">
-                <span>EDR Controller v2.4.0</span>
-                <span className="mx-2">•</span>
-                <span>Agent Status: Online</span>
-              </div>
             </div>
-          </div>
+          )
         )}
 
         {activeTab === 'telemetry' && (
@@ -1028,14 +1045,20 @@ export default function Endpoints() {
                   <option value="running_services">Running Services</option>
                 </select>
 
-                <button
-                  onClick={handleRequestTelemetry}
-                  disabled={isTelemetryLoading || !!activeRequestId}
-                  className="px-4 py-2 bg-[#00d4c3] text-black font-semibold rounded-lg text-sm hover:bg-[#00d4c3]/90 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_15px_-3px_#00d4c350]"
-                >
-                  <Activity size={16} />
-                  {isTelemetryLoading ? 'Requesting...' : 'Request Telemetry'}
-                </button>
+                {user?.role === 'user' ? (
+                  <div className="text-xs text-[#ff3b30] font-medium bg-[#ff3b30]/10 border border-[#ff3b30]/20 py-2 px-3 rounded-lg">
+                    Requesting telemetry is restricted.
+                  </div>
+                ) : (
+                  <button
+                    onClick={handleRequestTelemetry}
+                    disabled={isTelemetryLoading || !!activeRequestId}
+                    className="px-4 py-2 bg-[#00d4c3] text-black font-semibold rounded-lg text-sm hover:bg-[#00d4c3]/90 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_15px_-3px_#00d4c350]"
+                  >
+                    <Activity size={16} />
+                    {isTelemetryLoading ? 'Requesting...' : 'Request Telemetry'}
+                  </button>
+                )}
               </div>
             </div>
 

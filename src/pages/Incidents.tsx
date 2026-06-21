@@ -543,39 +543,47 @@ export default function Incidents() {
               {/* Actions Dropdown */}
               <div className="space-y-3">
                  <h4 className="text-xs font-bold text-[#52525b] uppercase tracking-wider">Management Actions</h4>
-                 <div className="flex flex-wrap gap-2">
-                   {selectedIncidentDetails?.allowed_transitions?.map((trans: string) => (
-                     <button
-                       key={trans}
-                       onClick={() => handleUpdateStatus(trans)}
-                       className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:border-[#00d4c3]/30 text-xs text-[#a6acb8] hover:text-white transition-all capitalize"
-                     >
-                       Set {trans.replace('_', ' ')}
-                     </button>
-                   ))}
-                   {/* Fallback status button just in case */}
-                   {!selectedIncidentDetails?.allowed_transitions && (
-                     <>
-                       <button onClick={() => handleUpdateStatus('in_progress')} className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:border-[#00d4c3]/30 text-xs text-[#a6acb8] hover:text-white transition-all">Set In Progress</button>
-                       <button onClick={() => handleUpdateStatus('resolved')} className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:border-[#00d4c3]/30 text-xs text-[#a6acb8] hover:text-white transition-all">Set Resolved</button>
-                     </>
-                   )}
-                 </div>
-
-                 {/* Analyst Assignment Dropdown */}
-                 <div className="pt-2">
-                   <label className="text-xs text-[#52525b] font-bold block mb-1">Assign Analyst</label>
-                   <select 
-                     onChange={(e) => handleAssignIncident(e.target.value)}
-                     className="bg-[#111318] border border-white/10 rounded-lg px-3 py-2 text-xs text-[#a6acb8] focus:outline-none focus:border-[#00d4c3]/50 w-full"
-                     defaultValue=""
-                   >
-                     <option value="" disabled>Select Analyst...</option>
-                     {analysts.map((a: any) => (
-                       <option key={a.id} value={a.id}>{a.full_name} ({a.role})</option>
+                 {user?.role === 'user' ? (
+                   <div className="py-2.5 px-4 rounded-xl bg-[#ff3b30]/10 border border-[#ff3b30]/20 text-xs text-[#ff3b30] font-medium">
+                     Read-only Access: You do not have permissions to modify incident status.
+                   </div>
+                 ) : (
+                   <div className="flex flex-wrap gap-2">
+                     {selectedIncidentDetails?.allowed_transitions?.map((trans: string) => (
+                       <button
+                         key={trans}
+                         onClick={() => handleUpdateStatus(trans)}
+                         className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:border-[#00d4c3]/30 text-xs text-[#a6acb8] hover:text-white transition-all capitalize"
+                       >
+                         Set {trans.replace('_', ' ')}
+                       </button>
                      ))}
-                   </select>
-                 </div>
+                     {/* Fallback status button just in case */}
+                     {!selectedIncidentDetails?.allowed_transitions && (
+                       <>
+                         <button onClick={() => handleUpdateStatus('in_progress')} className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:border-[#00d4c3]/30 text-xs text-[#a6acb8] hover:text-white transition-all">Set In Progress</button>
+                         <button onClick={() => handleUpdateStatus('resolved')} className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:border-[#00d4c3]/30 text-xs text-[#a6acb8] hover:text-white transition-all">Set Resolved</button>
+                       </>
+                     )}
+                   </div>
+                 )}
+ 
+                 {/* Analyst Assignment Dropdown */}
+                 {user?.role !== 'user' && (
+                   <div className="pt-2">
+                     <label className="text-xs text-[#52525b] font-bold block mb-1">Assign Analyst</label>
+                     <select 
+                       onChange={(e) => handleAssignIncident(e.target.value)}
+                       className="bg-[#111318] border border-white/10 rounded-lg px-3 py-2 text-xs text-[#a6acb8] focus:outline-none focus:border-[#00d4c3]/50 w-full"
+                       defaultValue=""
+                     >
+                       <option value="" disabled>Select Analyst...</option>
+                       {analysts.map((a: any) => (
+                         <option key={a.id} value={a.id}>{a.full_name} ({a.role})</option>
+                       ))}
+                     </select>
+                   </div>
+                 )}
               </div>
 
               {/* Chat room / comments */}
@@ -615,23 +623,29 @@ export default function Incidents() {
             </div>
 
             {/* Chat Send Form */}
-            <form onSubmit={handleSendComment} className="p-4 border-t border-white/10 bg-[#0a0a0c] flex gap-2 flex-shrink-0 z-10">
-              <input
-                type="text"
-                value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
-                placeholder="Type a message to other analysts..."
-                className="flex-1 bg-[#111318] border border-white/10 rounded-lg px-4 py-2 text-xs text-white placeholder:text-[#52525b] focus:outline-none focus:border-[#00d4c3]/50 transition-colors"
-                disabled={postingComment}
-              />
-              <button
-                type="submit"
-                className="p-2 bg-[#00d4c3] text-black rounded-lg hover:bg-[#00d4c3]/80 transition-colors flex items-center justify-center disabled:opacity-50"
-                disabled={!newComment.trim() || postingComment}
-              >
-                <Send size={14} />
-              </button>
-            </form>
+            {user?.role === 'user' ? (
+              <div className="p-4 border-t border-white/10 bg-[#0a0a0c] text-center text-xs text-[#ff3b30]/80 font-medium flex-shrink-0 z-10">
+                Commenting is restricted to SOC Analysts and Administrators.
+              </div>
+            ) : (
+              <form onSubmit={handleSendComment} className="p-4 border-t border-white/10 bg-[#0a0a0c] flex gap-2 flex-shrink-0 z-10">
+                <input
+                  type="text"
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  placeholder="Type a message to other analysts..."
+                  className="flex-1 bg-[#111318] border border-white/10 rounded-lg px-4 py-2 text-xs text-white placeholder:text-[#52525b] focus:outline-none focus:border-[#00d4c3]/50 transition-colors"
+                  disabled={postingComment}
+                />
+                <button
+                  type="submit"
+                  className="p-2 bg-[#00d4c3] text-black rounded-lg hover:bg-[#00d4c3]/80 transition-colors flex items-center justify-center disabled:opacity-50"
+                  disabled={!newComment.trim() || postingComment}
+                >
+                  <Send size={14} />
+                </button>
+              </form>
+            )}
           </div>
         </>
       )}

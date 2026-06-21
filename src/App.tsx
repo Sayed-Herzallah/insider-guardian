@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { DataProvider, useData } from '@/context/DataContext';
 import Sidebar from '@/components/Sidebar';
+import { getNavItemsForRole } from '@/config/navigation';
 import Toast from '@/components/Toast';
 import Login from '@/pages/Login';
 import Overview from '@/pages/Overview';
@@ -86,6 +87,32 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
   }, [onLogout]);
 
   const renderPage = () => {
+    // Check if user has permission to access the current page
+    const allowedItems = user ? getNavItemsForRole(user.role) : [];
+    const isAllowed = allowedItems.some((item) => item.id === currentPage);
+
+    if (!isAllowed && currentPage !== 'profile') {
+      return (
+        <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
+          <div className="w-16 h-16 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-500 mb-4 animate-pulse">
+            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-bold text-white mb-2">Access Denied</h2>
+          <p className="text-[#a6acb8] text-sm max-w-md mb-6">
+            You do not have the required permissions to view the <span className="text-[#00d4c3] font-semibold font-mono">"{currentPage}"</span> page.
+          </p>
+          <button
+            onClick={() => setCurrentPage('overview')}
+            className="px-5 py-2.5 bg-gradient-to-r from-[#00d4c3] to-[#00a896] text-[#050505] font-semibold rounded-xl text-sm shadow-lg shadow-[#00d4c3]/20 hover:shadow-xl hover:shadow-[#00d4c3]/30 transition-all hover:-translate-y-0.5 active:translate-y-0"
+          >
+            Return to Overview
+          </button>
+        </div>
+      );
+    }
+
     switch (currentPage) {
       case 'overview':
         return <Overview onThreatDetected={handleThreatDetected} />;
