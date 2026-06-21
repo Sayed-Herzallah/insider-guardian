@@ -169,10 +169,12 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
           };
           const profile = await withTimeout(apiRequest('/auth/profile/'), 1500);
           if (profile && profile.data) {
+            const rawRole = (profile.data.role || '').toLowerCase();
+            const normalizedRole = rawRole.includes('admin') ? 'admin' : (rawRole.includes('analyst') || rawRole.includes('soc')) ? 'soc' : 'user';
             setUser({
               id: profile.data.id,
               username: profile.data.email,
-              role: profile.data.role || 'user',
+              role: normalizedRole,
               name: profile.data.full_name || `${profile.data.first_name} ${profile.data.last_name}`.trim() || 'User',
               permissions: profile.data.permissions || [],
             });
@@ -303,10 +305,12 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       if (response && response.data) {
         saveTokens(response.data.access, response.data.refresh);
         const profile = await apiRequest('/auth/profile/');
+        const rawRole = (profile.data.role || '').toLowerCase();
+        const normalizedRole = rawRole.includes('admin') ? 'admin' : (rawRole.includes('analyst') || rawRole.includes('soc')) ? 'soc' : 'user';
         const userData: User = {
           id: profile.data.id,
           username: profile.data.email,
-          role: profile.data.role || 'user',
+          role: normalizedRole,
           name: profile.data.full_name || `${profile.data.first_name} ${profile.data.last_name}`.trim() || 'User',
           permissions: profile.data.permissions || [],
         };

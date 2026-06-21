@@ -97,6 +97,10 @@ const fetchEndpoints = async (
       return 0;
     });
 
+    if (mapped.length === 0) {
+      throw new Error('No agents found from API');
+    }
+
     const start = (page - 1) * limit;
 
     return {

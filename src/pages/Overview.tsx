@@ -155,7 +155,10 @@ export const fetchDashboardData = async (range: TimeRange): Promise<DashboardDat
     const timeseries = timeseriesRes?.data || [];
     const mitre = mitreRes?.data || [];
 
-    // Map EDR backend JSON to frontend DashboardData
+    // Fall back to mock data if there are no agents/endpoints registered in the backend database
+    if (!stats.agents || stats.agents.total === 0) {
+      throw new Error('Empty database');
+    }
     const mappedData: DashboardData = {
       stats: {
         endpoints: {

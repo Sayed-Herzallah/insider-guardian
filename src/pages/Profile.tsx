@@ -29,8 +29,8 @@ export default function Profile() {
 
   // Profile Details Form State
   const [detailsForm, setDetailsForm] = useState({
-    first_name: user?.name.split(' ')[0] || '',
-    last_name: user?.name.split(' ').slice(1).join(' ') || '',
+    first_name: user?.name ? user.name.split(' ')[0] : '',
+    last_name: user?.name ? user.name.split(' ').slice(1).join(' ') : '',
   });
   const [detailsErrors, setDetailsErrors] = useState<Record<string, string>>({});
   const [updatingDetails, setUpdatingDetails] = useState(false);
@@ -143,7 +143,7 @@ export default function Profile() {
         <div className="bg-[#0b0c0f] border border-white/5 rounded-2xl p-6 h-fit space-y-6">
           <div className="flex flex-col items-center text-center">
             <div className="w-24 h-24 rounded-full bg-gradient-to-br from-[#00d4c3] to-[#00a896] flex items-center justify-center text-3xl font-bold text-[#050505] shadow-lg shadow-[#00d4c3]/15 mb-4">
-              {user?.name.charAt(0) || 'U'}
+              {user?.name?.charAt(0) || 'U'}
             </div>
             <h2 className="text-xl font-bold text-white">{user?.name}</h2>
             <p className="text-xs text-[#00d4c3] uppercase tracking-wider font-semibold mt-1">{user?.role}</p>

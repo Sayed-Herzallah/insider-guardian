@@ -112,6 +112,9 @@ export default function Incidents() {
           type: i.created_by_email ? 'manual' : 'auto',
           description: i.description
         }));
+        if (mapped.length === 0) {
+          throw new Error('No incidents found from API');
+        }
         setIncidents(mapped);
       }
     } catch (e) {

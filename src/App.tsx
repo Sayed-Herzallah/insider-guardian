@@ -209,7 +209,7 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
               <div className="flex items-center gap-2 pl-2 sm:pl-3 border-l border-[rgba(244,246,251,0.08)]">
                 <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#00d4c3] to-[#00a896] flex items-center justify-center ring-2 ring-[#00d4c3]/20 flex-shrink-0">
                   <span className="text-sm font-bold text-[#050505]">
-                    {user?.name.charAt(0) || 'U'}
+                    {user?.name?.charAt(0) || 'U'}
                   </span>
                 </div>
                 <div className="hidden sm:block">
