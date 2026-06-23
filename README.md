@@ -1,121 +1,130 @@
-# 🛡️ Insider Guardian - Enterprise EDR Security Dashboard
+# InsiderGuardian: High-Fidelity Endpoint Detection & Response (EDR) Analyst Portal
 
 <div align="center">
-  <img src="https://capsule-render.vercel.app/api?type=waving&color=0:0d1117,100:c62828&height=180&section=header&text=Insider%20Guardian%20EDR&fontSize=40&fontColor=ffffff&fontFamily=Outfit" width="100%" />
+  <img src="https://capsule-render.vercel.app/api?type=waving&color=0:0d1117,100:0f172a&height=160&section=header&text=InsiderGuardian%20EDR&fontSize=42&fontColor=38bdf8&fontFamily=Outfit" width="100%" />
 </div>
 
-Insider Guardian is a next-generation, enterprise-grade Endpoint Detection and Response (EDR) frontend dashboard. Engineered for Security Operations Centers (SOC), it enables security analysts to monitor real-time endpoint telemetry, investigate complex threat incidents, and orchestrate automated response playbooks through a high-fidelity, hardware-accelerated interactive interface.
+InsiderGuardian is a production-grade Endpoint Detection and Response (EDR) frontend interface engineered for Security Operations Centers (SOC). It ingests real-time endpoint telemetry, maps threat indicators, and facilitates immediate host isolation workflows. The client is optimized for low rendering overhead under high event velocity.
 
 ---
 
-## 🚀 Key Features
+## ⚡ The Engineering Challenge
 
-* **🔌 Real-Time Telemetry Stream**: Live WebSocket client ingestion for instant threat event popups, incident alerts, and real-time host status synchronization.
-* **📊 Visual Threat Analytics**: High-performance declarative charting utilizing `Recharts` to visualize severity distribution, incident velocity, and host health graphs.
-* **✨ Premium Micro-interactions**: Smooth page layouts, responsive grids, and high-performance physics-based transition animations powered by `GSAP` (GreenSock).
-* **🔒 Enterprise Resilience**: Automatic JWT session renewal using interceptor queues on HTTP `401 Unauthorized` responses, combined with type-safe schema verification using `Zod`.
-* **⚙️ Interactive Operations**: Complete host isolation triggers, threat state lifecycle management (New, In-Progress, Contained, Resolved), and analyst note assignment.
+### Problem
+SOC analysts monitoring enterprise networks receive thousands of endpoint events per second. Traditional security dashboards suffer from:
+1. **Rendering Choke**: React re-render cascades caused by continuous WebSocket event ingestion.
+2. **Session Expiry Breaches**: Inactive analyst tokens expiring in the middle of active incident triage, disrupting telemetry connection and API calls.
+3. **Weak Schema Enforcement**: Unvalidated WebSocket payload formats causing runtime UI errors.
+
+### Solution
+InsiderGuardian solves these issues by:
+* **Decoupled Render Pipeline**: Dynamic telemetry events are batched and parsed through custom hooks, updating high-performance charts with debounced repaint windows.
+* **Resilient Connection Lifecycle**: Built-in Axios client interceptors catch authentication HTTP `401 Unauthorized` responses and automatically process JWT refresh token queues without interrupting active views.
+* **Strict Type Contracts**: Every incoming websocket and REST payload undergoes type verification via `Zod` schema gates before entering React state.
 
 ---
 
-## 🧬 Architecture & Logic Flow
+## 🧬 Frontend System Architecture
 
-Below is the client-side system architecture and telemetry flow inside Insider Guardian:
+The following diagram illustrates the internal client routing, state synchronization, and socket connection management:
 
 ```mermaid
 graph TD
-    User([Security Analyst]) <--> UI[React Components & Pages]
-    UI <--> Context[Data Context / State Manager]
-    Context <--> WSClient[WebSocket Client Wrapper]
-    Context <--> APIClient[Axios REST API Client]
-    
-    WSClient <-->|Live Telemetry Stream| BackendWS[Backend WebSocket Server]
-    APIClient <-->|Auth & CRUD APIs| BackendREST[Backend REST API Server]
+    subgraph UI Layer [React Analyst View]
+        DashboardPage[Dashboard Overview]
+        AlertsPage[Alert Logs & Triage]
+        SettingsPage[EDR Client Settings]
+    end
+
+    subgraph Data Ingestion & State Portal [Core Controllers]
+        StateContext[Global Telemetry Context]
+        ZodValidator[Zod Schema Verification]
+        AxiosInterceptors[Axios HTTP Interceptor Queue]
+        WSConnection[WebSocket Connection Manager]
+    end
+
+    subgraph External Infrastructure [Server Gateways]
+        REST_API[Backend REST Gateway: 8000/api/v1]
+        WS_Server[Backend WebSockets: 8000/ws]
+    end
+
+    %% UI Connections
+    DashboardPage <-->|Context Hooks| StateContext
+    AlertsPage <-->|Context Hooks| StateContext
+    SettingsPage <-->|Configuration State| AxiosInterceptors
+
+    %% Ingestion Connections
+    WSConnection -->|Raw Payload| ZodValidator
+    ZodValidator -->|Verified Schema| StateContext
+    AxiosInterceptors <-->|HTTPS REST| REST_API
+    WSConnection <-->|Full-Duplex Stream| WS_Server
 ```
 
 ---
 
-## 🛠️ Technology Stack & Badges
+## 🛠️ Technology Stack & Architecture Rationale
 
-### Core Frontend Stack
-[![React](https://img.shields.io/badge/React-v19.0-blue?logo=react&style=flat-square)](https://react.dev/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-v5.x-blue?logo=typescript&style=flat-square)](https://www.typescriptlang.org/)
-[![Vite](https://img.shields.io/badge/Vite-v7.0-purple?logo=vite&style=flat-square)](https://vite.dev/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-v3.4-blue?logo=tailwindcss&style=flat-square)](https://tailwindcss.com/)
+### Development & Build Runtime
+* **React (v19)**: Selected for its concurrent rendering features, helping optimize high-rate state updates from backend event streams.
+* **TypeScript (v5.x)**: Guarantees compile-time type-safety across telemetry logs and threat definitions.
+* **Vite (v7.0)**: Used as the build tool for fast hot module replacement (HMR) and optimized rollup production bundles.
+* **Tailwind CSS (v3.4)**: Allows highly customizable styling for custom dark mode design patterns suitable for night-shift SOC environments.
 
-### UI & Animations
-[![GSAP](https://img.shields.io/badge/GSAP-Animations-green?style=flat-square)](https://greensock.com/gsap/)
-[![Recharts](https://img.shields.io/badge/Recharts-Data_Vis-orange?style=flat-square)](https://recharts.org/)
-[![Radix UI](https://img.shields.io/badge/Radix_UI-Primitives-darkblue?style=flat-square)](https://www.radix-ui.com/)
-[![Zod Validation](https://img.shields.io/badge/Zod-Schema_Validation-violet?style=flat-square)](https://zod.dev/)
+### Visualization & Micro-interactions
+* **GSAP (GreenSock)**: Used for hardware-accelerated animations of critical alert notifications to keep UI transitions smooth.
+* **Recharts**: High-performance charting primitives configured with responsive sizing to display threat severity distribution.
+* **Radix UI**: Accessible design primitives (Modals, Dropdowns) forming the backbone of host isolation controls.
+* **Zod**: Runtime validator checking backend API payload changes.
 
 ---
 
-## 📂 Folder Structure
+## 📂 System Core Modules
 
 ```text
-insider-guardian/
-├── index.html         # HTML SPA bootstrap
-├── vite.config.ts     # Bundling & path configurations
-├── tailwind.config.js # Custom design tokens & colors
-├── src/
-│   ├── main.tsx       # Entry mount point
-│   ├── App.tsx        # Base layout & router coordinator
-│   ├── App.css        # Global layout classes
-│   ├── index.css      # Core Tailwind directives & style tokens
-│   ├── components/    # Reusable atomic UI components (charts, modals, table-rows)
-│   ├── config/        # API endpoints & environment constants
-│   ├── context/       # Auth context and telemetry socket state
-│   ├── hooks/         # Custom React hooks (telemetry, query, debounce)
-│   ├── lib/           # Clients wrappers (REST interceptors & socket emitters)
-│   ├── pages/         # Full layouts (Overview Dashboard, Alert Logs, Settings)
-│   └── types/         # Strict TypeScript interface schemas
+src/
+├── components/          # Stateless design components (Charts, Threat Cards, Modal Overlays)
+├── config/              # Central configuration (Gateway Endpoints, Constants)
+├── context/             # Auth Context and WS Telemetry State Provider
+├── hooks/               # Custom hooks: useTelemetry (handles buffer queues), useDebounce
+├── lib/                 # Core network wrappers (Axios Interceptors, WebSocket client)
+├── pages/               # Top-level routes (Security Overview, Alerts, Analyst Settings)
+└── types/               # Compile-time TypeScript interface schemas
 ```
 
 ---
 
-## 🚀 Getting Started
+## ⚡ Developer Execution & Local Run
 
 ### Prerequisites
-- Node.js (v18.0.0 or higher)
-- npm (v9.0.0 or higher)
+* Node.js v20.x or higher
+* npm v10.x or higher
 
-### Setup & Launch
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/Sayed-Herzallah/insider-guardian.git
-   cd insider-guardian
-   ```
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-3. Set up backend server endpoints in `src/config/api.ts`:
-   ```typescript
-   export const REST_BASE_URL = 'http://192.168.100.9:8000/api/v1';
-   export const WS_BASE_URL = 'ws://192.168.100.9:8000/ws/dashboard/';
-   ```
-4. Run locally:
-   ```bash
-   npm run dev
-   ```
-5. Build production bundle:
-   ```bash
-   npm run build
-   ```
+### Environment Configuration
+The application requires configuration of endpoints. Create or update a configuration file at `src/config/api.ts`:
 
----
+```typescript
+export const REST_BASE_URL = 'http://localhost:8000/api/v1';
+export const WS_BASE_URL = 'ws://localhost:8000/ws/dashboard/';
+```
 
-## 📜 Verified Certificates & Achievements
-To review verified technical accomplishments, backend training, and professional project portfolios, click below:
+### Installation and Boot
+```bash
+# 1. Clone client repository
+git clone https://github.com/Sayed-Herzallah/insider-guardian.git
+cd insider-guardian
 
-[![Portfolio Achievements](https://img.shields.io/badge/Verified_Certifications-Click_to_View-gold?style=for-the-badge&logo=credentials)](https://herzallah.me#certifications)
+# 2. Install production dependencies
+npm install
+
+# 3. Spin up development server (port defaults to 5173)
+npm run dev
+
+# 4. Compile and optimize for production
+npm run build
+```
 
 ---
 
-## 👨‍💻 Developed By
-**Sayed Herzallah**  
-*Backend-Focused Full-Stack Developer*  
-- [LinkedIn Profile](https://www.linkedin.com/in/sayed-herzallah)  
-- [Portfolio Website](https://herzallah.me)  
-- [GitHub Profile](https://github.com/Sayed-Herzallah)  
+## 📜 Architectural Decisions & Performance Audits
+1. **Axios Token Interceptor Queue**: When a JWT token expires, subsequent REST requests are intercepted and put in a temporary queue. The client dispatches a singular request to retrieve a new token. Once obtained, the queue is drained automatically, avoiding multiple duplicate token requests.
+2. **WebSocket Batching**: Telemetry event list updates are batched into 100ms intervals instead of triggering immediate state updates for every single payload, avoiding UI thread blocking.
