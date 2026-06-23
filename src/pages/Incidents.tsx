@@ -79,6 +79,7 @@ export default function Incidents() {
   const [newComment, setNewComment] = useState('');
   const [postingComment, setPostingComment] = useState(false);
   const [analysts, setAnalysts] = useState<any[]>([]);
+  const [assigning, setAssigning] = useState(false);
   
   const [search, setSearch] = useState('');
   const [filters, setFilters] = useState<{
@@ -134,7 +135,7 @@ export default function Incidents() {
   // Load analysts list
   const loadAnalysts = async () => {
     try {
-      const res = await apiRequest('/users/');
+      const res = await apiRequest('/users/?is_active=true');
       if (res && res.data) {
         setAnalysts(res.data);
       }
@@ -249,22 +250,51 @@ export default function Incidents() {
   // Assign Incident
   const handleAssignIncident = async (analystId: string) => {
     if (!selectedIncident) return;
+    setAssigning(true);
+    const targetId = analystId === "" ? null : analystId;
     try {
       const res = await apiRequest(`/incidents/${selectedIncident.id}/assign/`, {
         method: 'POST',
         body: JSON.stringify({
-          analyst_id: analystId || null
+          analyst_id: targetId
         })
       });
 
       if (res && res.success) {
-        toast.success('Incident analyst assigned');
-        loadIncidents();
-        const assignedName = analysts.find(a => a.id === analystId)?.full_name || 'Unassigned';
-        setSelectedIncident(prev => prev ? { ...prev, analyst: assignedName } : null);
+        const updatedIncident = res.data;
+        const newStatus = updatedIncident.status === 'open' ? 'new' : updatedIncident.status === 'in_progress' ? 'investigating' : updatedIncident.status === 'resolved' ? 'resolved' : 'contained';
+        const newAnalyst = updatedIncident.assigned_to_email || 'Unassigned';
+
+        toast.success(res.message || `Incident analyst assigned to ${newAnalyst}`);
+        
+        // Smoothly update local incidents list state
+        setIncidents((prev: Incident[]) => prev.map(inc => 
+          inc.id === selectedIncident.id 
+            ? { ...inc, status: newStatus, analyst: newAnalyst, assignedTo: newAnalyst } 
+            : inc
+        ));
+
+        // Smoothly update selectedIncident state
+        setSelectedIncident((prev: Incident | null) => prev ? { 
+          ...prev, 
+          status: newStatus, 
+          analyst: newAnalyst,
+          assignedTo: newAnalyst
+        } : null);
+
+        // Update selectedIncidentDetails state
+        setSelectedIncidentDetails((prev: any) => prev ? {
+          ...prev,
+          status: updatedIncident.status,
+          assigned_to_email: updatedIncident.assigned_to_email
+        } : null);
+
+        loadIncidents(); // background refresh
       }
-    } catch (e) {
-      toast.error('Assignment failed.');
+    } catch (e: any) {
+      toast.error(e.message || 'Assignment failed.');
+    } finally {
+      setAssigning(false);
     }
   };
 
@@ -572,18 +602,21 @@ export default function Incidents() {
                  )}
  
                  {/* Analyst Assignment Dropdown */}
-                 {user?.role !== 'user' && (
+                 {user?.permissions?.includes("manage_incidents") && (
                    <div className="pt-2">
                      <label className="text-xs text-[#52525b] font-bold block mb-1">Assign Analyst</label>
                      <select 
+                       value={analysts.find((a: any) => a.email === selectedIncident.analyst)?.id || ""}
                        onChange={(e) => handleAssignIncident(e.target.value)}
-                       className="bg-[#111318] border border-white/10 rounded-lg px-3 py-2 text-xs text-[#a6acb8] focus:outline-none focus:border-[#00d4c3]/50 w-full"
-                       defaultValue=""
+                       disabled={assigning}
+                       className="bg-[#111318] border border-white/10 rounded-lg px-3 py-2 text-xs text-[#a6acb8] focus:outline-none focus:border-[#00d4c3]/50 w-full disabled:opacity-50 disabled:cursor-not-allowed"
                      >
-                       <option value="" disabled>Select Analyst...</option>
-                       {analysts.map((a: any) => (
-                         <option key={a.id} value={a.id}>{a.full_name} ({a.role})</option>
-                       ))}
+                       <option value="">Unassign / Select Analyst...</option>
+                       {analysts
+                         .filter((a: any) => a.role !== 'viewer')
+                         .map((a: any) => (
+                           <option key={a.id} value={a.id}>{a.full_name} ({a.role})</option>
+                         ))}
                      </select>
                    </div>
                  )}

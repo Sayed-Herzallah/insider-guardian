@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { apiRequest } from '@/lib/apiClient';
 import { useData } from '@/context/DataContext';
+import { REST_BASE_URL } from '@/config/api';
+import { toast } from 'sonner';
 import {
   Search,
   Monitor,
@@ -20,7 +22,9 @@ import {
   Cpu,
   Terminal,
   XCircle,
-  Database
+  Database,
+  Copy,
+  AlertTriangle
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -201,6 +205,15 @@ export default function Endpoints() {
   const [telemetryData, setTelemetryData] = useState<any[] | null>(null);
   const [telemetrySearch, setTelemetrySearch] = useState<string>('');
   const [telemetryProgress, setTelemetryProgress] = useState<number>(0);
+
+  // Deploy/Register Agent and Rotate API Key states
+  const [showDeployModal, setShowDeployModal] = useState(false);
+  const [registerName, setRegisterName] = useState('');
+  const [registerDescription, setRegisterDescription] = useState('');
+  const [nameError, setNameError] = useState('');
+  const [isRegistering, setIsRegistering] = useState(false);
+  const [registeredData, setRegisteredData] = useState<{ id: string; name: string; api_key: string } | null>(null);
+  const [isRotatingKey, setIsRotatingKey] = useState(false);
 
   // Polling for commands
   useEffect(() => {
@@ -383,6 +396,79 @@ export default function Endpoints() {
 
     return () => clearInterval(interval);
   }, [activeRequestId, telemetryType, selectedEndpoint]);
+
+  // Copy to clipboard helper
+  const copyToClipboard = (text: string, label: string) => {
+    navigator.clipboard.writeText(text);
+    toast.success(`${label} copied to clipboard`);
+  };
+
+  // Register Agent Handler
+  const handleRegisterAgent = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!registerName.trim()) {
+      setNameError('Agent name is required');
+      return;
+    }
+    setNameError('');
+    setIsRegistering(true);
+
+    try {
+      const res = await apiRequest('/agents/', {
+        method: 'POST',
+        body: JSON.stringify({
+          name: registerName.trim(),
+          description: registerDescription.trim()
+        })
+      });
+
+      if (res && res.success) {
+        setRegisteredData({
+          id: res.data.id,
+          name: res.data.name,
+          api_key: res.data.api_key
+        });
+        toast.success(res.message || 'Agent registered successfully');
+      } else {
+        throw new Error(res?.message || 'Failed to register agent');
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to register agent');
+    } finally {
+      setIsRegistering(false);
+    }
+  };
+
+  // Rotate API Key Handler
+  const handleRotateApiKey = async () => {
+    if (!selectedEndpoint) return;
+    if (!window.confirm("Are you sure you want to rotate the API key for this agent? The old key will be invalidated immediately.")) {
+      return;
+    }
+
+    setIsRotatingKey(true);
+    try {
+      const res = await apiRequest(`/agents/${selectedEndpoint.id}/rotate-key/`, {
+        method: 'POST'
+      });
+
+      if (res && res.success) {
+        setRegisteredData({
+          id: selectedEndpoint.id,
+          name: selectedEndpoint.hostname,
+          api_key: res.data.api_key
+        });
+        setShowDeployModal(true);
+        toast.success(res.message || 'API key rotated successfully');
+      } else {
+        throw new Error(res?.message || 'Failed to rotate API key');
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to rotate API key');
+    } finally {
+      setIsRotatingKey(false);
+    }
+  };
 
   const handleDispatchCommand = async () => {
     if (!selectedCommand || !selectedEndpoint) return;
@@ -658,6 +744,15 @@ export default function Endpoints() {
           <div className="flex gap-2">
             {user?.role !== 'user' && (
               <>
+                {user?.permissions?.includes("manage_agents") && (
+                  <button 
+                    onClick={handleRotateApiKey}
+                    disabled={isRotatingKey}
+                    className="px-3 py-1.5 bg-yellow-500/10 border border-yellow-500/20 text-yellow-500 rounded-lg text-xs font-medium hover:bg-yellow-500/20 transition-colors disabled:opacity-50"
+                  >
+                    {isRotatingKey ? 'Rotating...' : 'Rotate API Key'}
+                  </button>
+                )}
                 <button className="px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-xs font-medium hover:bg-white/10 transition-colors">
                   Isolate Device
                 </button>
@@ -1124,9 +1219,14 @@ export default function Endpoints() {
             <Download size={16} />
             Export
           </button>
-          <button className="px-4 py-2 bg-[#00d4c3] text-black font-semibold rounded-lg text-sm hover:bg-[#00d4c3]/90 transition-colors shadow-[0_0_15px_-3px_#00d4c350]">
-            Deploy Agent
-          </button>
+          {user?.permissions?.includes("manage_agents") && (
+            <button 
+              onClick={() => setShowDeployModal(true)}
+              className="px-4 py-2 bg-[#00d4c3] text-black font-semibold rounded-lg text-sm hover:bg-[#00d4c3]/90 transition-colors shadow-[0_0_15px_-3px_#00d4c350]"
+            >
+              Deploy Agent
+            </button>
+          )}
         </div>
       </div>
 
@@ -1288,6 +1388,169 @@ export default function Endpoints() {
            </div>
         </div>
       </div>
+
+      {showDeployModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-[#0b0c0f] border border-white/10 rounded-xl w-full max-w-lg overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+            {registeredData ? (
+              // Step 4: Show Credentials
+              <div className="p-6 space-y-6">
+                <div className="space-y-1">
+                  <h3 className="text-lg font-bold text-white">Agent Credentials Generated</h3>
+                  <p className="text-xs text-[#a6acb8]">Use these credentials to configure your C++ agent on the target machine.</p>
+                </div>
+
+                <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg flex gap-3 text-red-400">
+                  <AlertTriangle className="w-5 h-5 flex-shrink-0" />
+                  <div className="text-xs space-y-1">
+                    <p className="font-semibold">Important Security Warning</p>
+                    <p className="leading-relaxed font-sans">Save this API key now. For security reasons, it will NOT be shown again. If lost, you will need to rotate the key to get a new one.</p>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] uppercase font-bold tracking-wider text-[#52525b]">Agent ID (UUID)</label>
+                    <div className="flex gap-2">
+                      <input 
+                        type="text" 
+                        readOnly 
+                        value={registeredData.id}
+                        className="flex-1 bg-[#111318] border border-white/10 rounded-lg px-3 py-2 text-xs font-mono text-white select-all focus:outline-none"
+                      />
+                      <button 
+                        onClick={() => copyToClipboard(registeredData.id, 'Agent ID')}
+                        className="p-2 bg-white/5 border border-white/10 rounded-lg text-[#a6acb8] hover:text-white hover:bg-white/10 transition-colors"
+                        title="Copy Agent ID"
+                      >
+                        <Copy size={14} />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] uppercase font-bold tracking-wider text-[#52525b]">API Key</label>
+                    <div className="flex gap-2">
+                      <input 
+                        type="text" 
+                        readOnly 
+                        value={registeredData.api_key}
+                        className="flex-1 bg-[#111318] border border-white/10 rounded-lg px-3 py-2 text-xs font-mono text-white select-all focus:outline-none"
+                      />
+                      <button 
+                        onClick={() => copyToClipboard(registeredData.api_key, 'API Key')}
+                        className="p-2 bg-white/5 border border-white/10 rounded-lg text-[#a6acb8] hover:text-white hover:bg-white/10 transition-colors"
+                        title="Copy API Key"
+                      >
+                        <Copy size={14} />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] uppercase font-bold tracking-wider text-[#52525b]">config.json snippet</label>
+                    <pre className="bg-[#111318] border border-white/10 rounded-lg p-3 text-[10px] font-mono text-[#a6acb8] overflow-x-auto whitespace-pre">
+{JSON.stringify({
+  server: {
+    host: (() => {
+      try {
+        return new URL(REST_BASE_URL).hostname;
+      } catch (e) {
+        return "deskwork-delete-boneless.ngrok-free.dev";
+      }
+    })(),
+    port: 8000,
+    tls: false,
+    agent_uuid: registeredData.id,
+    api_key: registeredData.api_key
+  }
+}, null, 2)}
+                    </pre>
+                  </div>
+                </div>
+
+                <div className="flex justify-end pt-2">
+                  <button
+                    onClick={() => {
+                      setShowDeployModal(false);
+                      setRegisteredData(null);
+                      setRegisterName('');
+                      setRegisterDescription('');
+                      loadData();
+                    }}
+                    className="px-4 py-2 bg-[#00d4c3] text-black font-semibold rounded-lg text-xs hover:bg-[#00d4c3]/90 transition-colors"
+                  >
+                    Close & Refresh
+                  </button>
+                </div>
+              </div>
+            ) : (
+              // Step 2: Form Input
+              <form onSubmit={handleRegisterAgent} className="p-6 space-y-6">
+                <div className="space-y-1">
+                  <h3 className="text-lg font-bold text-white">Register New Agent</h3>
+                  <p className="text-xs text-[#a6acb8]">Generate credentials for a new machine agent daemon.</p>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-white">Agent Name <span className="text-red-500">*</span></label>
+                    <input 
+                      type="text" 
+                      placeholder="e.g., DC-01 or HR-Workstation-12"
+                      value={registerName}
+                      onChange={(e) => {
+                        setRegisterName(e.target.value);
+                        if (e.target.value.trim()) setNameError('');
+                      }}
+                      className={cn(
+                        "w-full bg-[#111318] border rounded-lg px-3 py-2 text-xs text-white placeholder:text-[#52525b] focus:outline-none transition-colors",
+                        nameError ? "border-red-500 focus:border-red-500" : "border-white/10 focus:border-[#00d4c3]/50"
+                      )}
+                    />
+                    {nameError && (
+                      <p className="text-[10px] text-red-500 font-medium">{nameError}</p>
+                    )}
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-white">Description (Optional)</label>
+                    <textarea 
+                      placeholder="e.g., Domain controller in Cairo office"
+                      value={registerDescription}
+                      onChange={(e) => setRegisterDescription(e.target.value)}
+                      rows={3}
+                      className="w-full bg-[#111318] border border-white/10 rounded-lg px-3 py-2 text-xs text-white placeholder:text-[#52525b] focus:outline-none focus:border-[#00d4c3]/50 transition-colors resize-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowDeployModal(false);
+                      setRegisterName('');
+                      setRegisterDescription('');
+                      setNameError('');
+                    }}
+                    className="px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-xs text-[#a6acb8] hover:text-white transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isRegistering}
+                    className="px-4 py-2 bg-[#00d4c3] text-black font-semibold rounded-lg text-xs hover:bg-[#00d4c3]/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isRegistering ? 'Registering...' : 'Register'}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
