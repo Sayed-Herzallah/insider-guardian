@@ -1,81 +1,72 @@
-# 💻 Insider Guardian
+# Insider Guardian: Enterprise-Grade Endpoint Detection & Response (EDR) Dashboard
 
 <div align="center">
-  <img src="https://capsule-render.vercel.app/api?type=waving&color=0:0d1117,100:0f172a&height=160&section=header&text=Insider%20Guardian&fontSize=42&fontColor=38bdf8&fontFamily=Outfit" width="100%" />
+  <img src="https://capsule-render.vercel.app/api?type=waving&color=0:0d1117,100:e11d48&height=160&section=header&text=Insider%20Guardian&fontSize=42&fontColor=ffffff&fontFamily=Outfit" width="100%" />
 </div>
 
 <div align="center">
-  ![HTML5](https://img.shields.io/badge/HTML5-Structure-orange?logo=html5&style=for-the-badge) ![CSS3](https://img.shields.io/badge/CSS3-Design-blue?logo=css3&style=for-the-badge) ![JavaScript](https://img.shields.io/badge/JavaScript-ES6-yellow?logo=javascript&style=for-the-badge) ![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
+  ![React](https://img.shields.io/badge/React-2023-blue?logo=react&style=for-the-badge) ![GSAP](https://img.shields.io/badge/GSAP-Animations-green?logo=greensock&style=for-the-badge) ![Recharts](https://img.shields.io/badge/Recharts-DataViz-blue?logo=databricks&style=for-the-badge) ![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
 </div>
 
----
+بوابة **Insider Guardian** هي واجهة تشغيل أمنية فائقة الجودة من نوع EDR مخصصة للمحللين الأمنيين لمراقبة تدفقات شبكة الخوادم، ورصد التهديدات السيبرانية الداخلية بشكل فوري عبر رسوم بيانية وتأثيرات بصرية حية.
 
-## 📌 Project Overview (Description)
-Enterprise-grade Endpoint Detection and Response (EDR) dashboard frontend featuring real-time WebSocket telemetry, Recharts data visualization, and fluid GSAP transitions.
-
-This codebase represents professional software development practices, clean module organization, and efficient code architectures tailored for high responsiveness and scalability.
+This repository houses the high-fidelity React frontend dashboard and real-time visualization widgets for the **Insider Guardian Security Suite**. Built using advanced GSAP animations and Recharts tracking panels.
 
 ---
 
-## ⚡ The Engineering Challenge
+## 🧬 Threat Detection Telemetry Flow
 
-### 🔴 Problem
-Developers building web solutions face difficulties handling state synchronization, styling inconsistencies, and complex configurations that clutter logic and trigger UI slowdowns or connection lifecycle failures.
+The interface processes incoming WebSocket warning signals and updates dashboard states immediately:
 
-### 🟢 Solution
-This project implements:
-* **Separation of Concerns**: Structured module layouts separating design assets from operational logic.
-* **Optimized Rendering**: Efficient script logic and CSS layout variables to maintain lightweight UI paint times.
-* **Structured Coding Standards**: Written using clean semantic patterns ensuring readable code maintainability.
+```mermaid
+graph TD
+    Agent[Security Agent Telemetry] -->|WebSocket event 'threat-alert'| Client[React State Manager]
+    Client -->|Append to Alert Queue| AlertState[Threat Warning Alert]
+    AlertState -->|Trigger GSAP alert animation| UI[GSAP Toast Notification Alert]
+    Client -->|Update Recharts timeline dataset| Chart[Render SVG Timeline Graph]
+```
 
 ---
 
-## 🧬 System Architecture
-The internal layout structures are separated logically:
+## 🧬 UI Modules & Features
+
+1.  **Real-Time Telemetry Monitor**: Timeline graphs tracking network operations, memory logs, and process updates.
+2.  **Threat Alert Center**: Toast alert system animated via GSAP to draw analyst attention to high-risk events.
+3.  **Active Connections Map**: SVG dashboard panels tracking server node health.
+
+---
+
+## 🛠️ Technology Stack & Styling Assets
+
+*   **Structure**: Component-driven layout utilizing **React 18** and **Vite** bundler.
+*   **Animation Engine**: **GSAP (GreenSock)** for smooth warning displays.
+*   **Data Visualization**: **Recharts** for SVG charting components.
+*   **Styling**: Modern dark mode dashboard layout optimized for low-light command environments.
+
+---
+
+## 📂 Repository Module Layout
+
 ```text
 insider-guardian/
-├── css/ or styles/      # Styling engines and layouts
-├── js/ or src/          # Source scripts and business logic
-├── index.html or app.js # Operational entry point
+├── src/
+│   ├── components/      # Reusable widgets (Charts, Alerts)
+│   ├── styles/          # TailwindCSS and custom dashboard themes
+│   ├── App.jsx          # Dashboard root layout
+│   └── main.jsx         # Render entry point
+├── package.json         # React metadata
 └── README.md            # System documentation
 ```
 
 ---
 
-## 🛠️ Technology Stack
-
-| Technology | Purpose |
-| :--- | :--- |
-| HTML5 | Semantic structure layout |
-| CSS3 | Layout styling and animations |
-| JavaScript | DOM interactivity logic |
-
----
-
-## 🚀 Local Developer Setup & Run
-
-### 📋 Prerequisites
-* Modern web browser / Node.js runtime (depending on project stack)
-
-### ⚙️ Quick Start Steps
+## ⚡ Local Setup & Run
 ```bash
-    git clone https://github.com/Sayed-Herzallah/insider-guardian.git
-    cd insider-guardian
-    # Open index.html in any modern browser, or run local server:
-    python -m http.server 8080
+git clone https://github.com/Sayed-Herzallah/insider-guardian.git
+cd insider-guardian
+npm install
+npm run dev
 ```
-
----
-
-## 🔮 Future Improvements
-* [ ] Integrate automated unit testing.
-* [ ] Add dynamic dark/light theme switcher.
-* [ ] Improve responsiveness on extra-small mobile screen viewports.
-
----
-
-## 👥 Contributors
-* **Sayed Herzallah** - Lead Developer & Systems Architect
 
 ---
 
